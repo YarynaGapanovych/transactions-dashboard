@@ -1,5 +1,5 @@
-import type { TransactionDto } from "@/types/api"
-import { TRANSACTION_STATUS } from "@/types/transaction"
+import { TransactionDto } from "@/types/api";
+import { TRANSACTION_STATUS } from "@/types/transaction";
 
 export const MOCK_TRANSACTION_DTOS: TransactionDto[] = [
   {
@@ -50,4 +50,4 @@ export const MOCK_TRANSACTION_DTOS: TransactionDto[] = [
     created_at: "2026-05-08T08:03:55Z",
     status: TRANSACTION_STATUS.Success,
   },
-]
+];

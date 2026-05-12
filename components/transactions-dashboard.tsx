@@ -1,7 +1,7 @@
 "use client";
 
 import { FileDown, Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { FailedPaymentsBanner } from "@/components/failed-payments-banner";
@@ -32,6 +32,22 @@ export function TransactionsDashboard() {
   const [invoiceLoadingIds, setInvoiceLoadingIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const invoiceLoadingIdsRef = useRef(new Set<string>());
+
+  function beginInvoiceDownload(id: string) {
+    if (invoiceLoadingIdsRef.current.has(id)) {
+      return false;
+    }
+
+    invoiceLoadingIdsRef.current.add(id);
+    setInvoiceLoadingIds(new Set(invoiceLoadingIdsRef.current));
+    return true;
+  }
+
+  function finishInvoiceDownload(id: string) {
+    invoiceLoadingIdsRef.current.delete(id);
+    setInvoiceLoadingIds(new Set(invoiceLoadingIdsRef.current));
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -95,50 +111,38 @@ export function TransactionsDashboard() {
 
   function handleDownloadInvoice(tx: Transaction) {
     const id = tx.id;
-    let started = false;
 
-    setInvoiceLoadingIds((prev) => {
-      if (prev.has(id)) {
-        return prev;
-      }
-
-      started = true;
-      return new Set(prev).add(id);
-    });
-
-    if (!started) {
+    if (!beginInvoiceDownload(id)) {
       return;
     }
 
     window.setTimeout(() => {
-      const lines = [
-        `Invoice (mock)`,
-        `Transaction: ${tx.id}`,
-        `Amount: ${formatCurrency(tx.amount)}`,
-        `Date: ${formatDateTime(tx.createdAt)}`,
-        "",
-        "This is a dummy PDF substitute for demo purposes.",
-      ];
-      const blob = new Blob([lines.join("\n")], {
-        type: "text/plain;charset=utf-8",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `invoice-${id}.txt`;
-      a.rel = "noopener";
-      a.click();
-      URL.revokeObjectURL(url);
+      try {
+        const lines = [
+          `Invoice (mock)`,
+          `Transaction: ${tx.id}`,
+          `Amount: ${formatCurrency(tx.amount)}`,
+          `Date: ${formatDateTime(tx.createdAt)}`,
+          "",
+          "This is a dummy PDF substitute for demo purposes.",
+        ];
+        const blob = new Blob([lines.join("\n")], {
+          type: "text/plain;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `invoice-${id}.txt`;
+        a.rel = "noopener";
+        a.click();
+        URL.revokeObjectURL(url);
 
-      setInvoiceLoadingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-
-      toast.success("Invoice ready", {
-        description: `Downloaded invoice-${id}.txt`,
-      });
+        toast.success("Invoice ready", {
+          description: `Downloaded invoice-${id}.txt`,
+        });
+      } finally {
+        finishInvoiceDownload(id);
+      }
     }, 2000);
   }
 
@@ -284,7 +288,9 @@ export function TransactionsDashboard() {
                         <span className="inline-block w-4" aria-hidden />
                       )}
                     </TableCell>
-                    <TableCell className="font-mono text-base">{tx.id}</TableCell>
+                    <TableCell className="font-mono text-base">
+                      {tx.id}
+                    </TableCell>
                     <TableCell className="font-medium tabular-nums">
                       {formatCurrency(tx.amount)}
                     </TableCell>
