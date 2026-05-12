@@ -21,16 +21,17 @@ export function TransactionsDashboardSkeleton() {
     >
       <span className="sr-only">Loading transactions…</span>
       <header className="space-y-3">
-        <Skeleton className="h-8 w-72 max-w-full" />
+        <Skeleton className="h-9 w-80 max-w-full" />
         <div className="space-y-2">
-          <Skeleton className="h-4 w-full max-w-2xl" />
-          <Skeleton className="h-4 w-full max-w-xl" />
+          <Skeleton className="h-5 w-full max-w-2xl" />
+          <Skeleton className="h-5 w-full max-w-xl" />
         </div>
       </header>
 
-      <Skeleton className="h-22 w-full max-w-6xl rounded-lg" />
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-22 w-full max-w-6xl rounded-lg" />
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -39,37 +40,38 @@ export function TransactionsDashboardSkeleton() {
                 <Skeleton className="size-4 rounded-[4px]" aria-hidden />
               </TableHead>
               <TableHead>Transaction ID</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>Amount</TableHead>
               <TableHead>Date / time</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="pr-4 text-right">Invoice</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: SKELETON_ROW_COUNT }).map((_, i) => (
-              <TableRow key={i} className="hover:bg-transparent">
+            {Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
+              <TableRow key={`skeleton-row-${index}`} className="hover:bg-transparent">
                 <TableCell className="pl-4">
                   <Skeleton className="size-4 rounded-[4px]" />
                 </TableCell>
                 <TableCell>
-                  <Skeleton className="h-4 w-36 font-mono" />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Skeleton className="ml-auto h-4 w-20" />
+                  <Skeleton className="h-5 w-36 font-mono" />
                 </TableCell>
                 <TableCell>
-                  <Skeleton className="h-4 w-44" />
+                  <Skeleton className="h-5 w-20" />
                 </TableCell>
                 <TableCell>
-                  <Skeleton className="h-5 w-24 rounded-4xl" />
+                  <Skeleton className="h-5 w-44" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-6 w-24 rounded-4xl" />
                 </TableCell>
                 <TableCell className="pr-4 text-right">
-                  <Skeleton className="ml-auto h-8 w-38 rounded-lg" />
+                  <Skeleton className="ml-auto h-9 w-38 rounded-lg" />
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   )
