@@ -1,5 +1,5 @@
-import { TransactionStatus } from "@/types/transaction"
+import { TRANSACTION_STATUS, type TransactionStatus } from "@/types/transaction"
 
 export function isFailedStatus(status: TransactionStatus): boolean {
-  return status === TransactionStatus.Failed
+  return status === TRANSACTION_STATUS.Failed
 }

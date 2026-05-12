@@ -1,26 +1,22 @@
 # Transactions Dashboard
 
-A **Transactions Management** UI for reviewing payment history, downloading invoices (mock), and retrying failed payments—individually or in bulk. Built with [Next.js](https://nextjs.org) (App Router), [React](https://react.dev) 19, [Tailwind CSS](https://tailwindcss.com) v4, and [shadcn/ui](https://ui.shadcn.com) components.
+A **Transactions Management** UI for reviewing payment history, downloading invoices, and retrying failed payments in bulk. The app uses mock data and client-side delays to simulate API behavior—there is no backend.
 
-## Features
+## Installation
 
-- **Payment history** table: transaction ID, amount, date/time (stable `en-US` formatting for SSR), and status badges (Paid, Failed, Retrying, Success after retry).
-- **Download invoice** (mock): ~2s “generating PDF” state, then a small dummy file download and a **Sonner** toast when complete.
-- **Bulk retry**: checkboxes only on **Failed** rows, header checkbox to select all failed, **Retry selected** runs concurrent mock retries (1–4s per row, ~20% stay failed).
-- **Initial load**: skeleton layout while data is “fetched” (simulated delay).
-
-## Tech stack
-
-- Next.js 16, TypeScript, ESLint (`eslint-config-next`)
-- Tailwind CSS v4, `tw-animate-css`, theme tokens from shadcn
-- UI: shadcn-style primitives (`@base-ui/react` where applicable), **Sonner** toasts
-
-## Getting started
-
-Install dependencies and run the dev server (this repo uses **pnpm**):
+Use [pnpm](https://pnpm.io) from the project root:
 
 ```bash
 pnpm install
+```
+
+If install or build reports **ignored build scripts** (`ERR_PNPM_IGNORED_BUILDS`), follow pnpm’s prompt (for example `pnpm approve-builds`) or run `CI=true pnpm install` in CI-like environments.
+
+## Running
+
+Development server:
+
+```bash
 pnpm dev
 ```
 
@@ -29,25 +25,36 @@ Open [http://localhost:3000](http://localhost:3000).
 Other scripts:
 
 ```bash
-pnpm build    # production build
-pnpm start    # run production server
-pnpm lint     # eslint
+pnpm build   # production build
+pnpm start   # run production server
+pnpm lint    # ESLint
 ```
 
-If `pnpm install` or `pnpm run build` exits with **ignored build scripts** (`ERR_PNPM_IGNORED_BUILDS`), follow pnpm’s hint (for example `pnpm approve-builds` or `CI=true pnpm install`) for your environment.
+## Tech stack
 
-## Project layout
+- [Next.js](https://nextjs.org) 16 (App Router), [React](https://react.dev) 19, [TypeScript](https://www.typescriptlang.org)
+- [Tailwind CSS](https://tailwindcss.com) v4, [shadcn/ui](https://ui.shadcn.com) components, [Sonner](https://sonner.emilkowal.ski) toasts
+- [Lucide](https://lucide.dev) icons; [Base UI](https://base-ui.com) primitives under some shadcn controls
+- ESLint with `eslint-config-next`
 
-| Path | Role |
-|------|------|
-| `app/page.tsx` | Home route; renders the dashboard |
-| `app/layout.tsx` | Root layout, fonts, global styles, toasts |
-| `app/globals.css` | Tailwind + shadcn theme variables |
-| `components/transactions-dashboard.tsx` | Main dashboard: table, skeleton, invoices, bulk retry |
-| `components/ui/` | shadcn UI primitives (table, badge, button, checkbox, skeleton, sonner) |
-| `lib/mock-transactions.ts` | Mock transaction list |
-| `lib/transaction-types.ts` | Shared types |
+## Architecture
 
-## Deploy
+The app is a small Next.js front end with a thin server shell and one interactive client surface.
 
-See the [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying). [Vercel](https://vercel.com) is the usual host for Next.js apps.
+- **`app/`** — `layout.tsx` (fonts, global styles, toaster), `page.tsx` (home route).
+- **`components/`** — `transactions-dashboard.tsx` owns table state and mock flows; smaller pieces handle the failed-payments banner, loading skeleton, and status badges.
+- **`components/ui/`** — shadcn-style primitives (table, button, checkbox, badge, skeleton, sonner).
+- **`lib/`** — mock transaction list, formatting helpers, and status helpers.
+- **`types/`** — shared `Transaction` model and `TransactionStatus` enum.
+
+`app/page.tsx` stays a server component and renders the client dashboard. Selection, invoice download, retries, and toasts run in the browser.
+
+## Mock API simulation
+
+There is no REST or GraphQL API. Behavior is simulated in the client:
+
+- **Initial load** — `MOCK_TRANSACTIONS` in `lib/mock-transactions.ts` seeds the table; a short timeout shows a skeleton before data appears.
+- **Download invoice** — ~2s loading per row, then a dummy text file download and a Sonner success toast.
+- **Bulk retry** — selected failed rows move to `retrying`, then each row resolves on its own timer (about 1–4s) with a ~20% chance of staying `failed`; otherwise `success`.
+
+Formatting uses fixed locale, currency, and timezone settings in `lib/format-config.ts` so server and client output stay aligned.
