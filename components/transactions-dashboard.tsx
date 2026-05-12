@@ -17,9 +17,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, formatDateTime } from "@/lib/format";
+import { downloadMockInvoice } from "@/lib/mock-invoice";
+import {
+  applyRetryResult,
+  getSelectedFailedIds,
+  markRowsAsRetrying,
+  resolveMockRetryPayment,
+} from "@/lib/mock-retry-payments";
 import { isFailedStatus } from "@/lib/transaction-status";
 import { fetchTransactions } from "@/lib/transactions-api";
-import { randomRetryDelayMs } from "@/lib/utils";
 import { TRANSACTION_STATUS, type Transaction } from "@/types/transaction";
 import { TransactionStatusCell } from "./transaction-status-cell";
 
@@ -116,34 +122,15 @@ export function TransactionsDashboard() {
       return;
     }
 
-    window.setTimeout(() => {
-      try {
-        const lines = [
-          `Invoice (mock)`,
-          `Transaction: ${tx.id}`,
-          `Amount: ${formatCurrency(tx.amount)}`,
-          `Date: ${formatDateTime(tx.createdAt)}`,
-          "",
-          "This is a dummy PDF substitute for demo purposes.",
-        ];
-        const blob = new Blob([lines.join("\n")], {
-          type: "text/plain;charset=utf-8",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `invoice-${id}.txt`;
-        a.rel = "noopener";
-        a.click();
-        URL.revokeObjectURL(url);
-
+    void downloadMockInvoice(tx)
+      .then((filename) => {
         toast.success("Invoice ready", {
-          description: `Downloaded invoice-${id}.txt`,
+          description: `Downloaded ${filename}`,
         });
-      } finally {
+      })
+      .finally(() => {
         finishInvoiceDownload(id);
-      }
-    }, 2000);
+      });
   }
 
   function handleRetrySelected() {
@@ -154,23 +141,13 @@ export function TransactionsDashboard() {
         return prev;
       }
 
-      retryIds = prev
-        .filter(
-          (row) =>
-            row.status === TRANSACTION_STATUS.Failed &&
-            selectedFailed.has(row.id),
-        )
-        .map((row) => row.id);
+      retryIds = getSelectedFailedIds(prev, selectedFailed);
 
       if (retryIds.length === 0) {
         return prev;
       }
 
-      return prev.map((row) =>
-        retryIds.includes(row.id) && row.status === TRANSACTION_STATUS.Failed
-          ? { ...row, status: TRANSACTION_STATUS.Retrying }
-          : row,
-      );
+      return markRowsAsRetrying(prev, retryIds);
     });
 
     if (retryIds.length === 0) {
@@ -183,25 +160,12 @@ export function TransactionsDashboard() {
       return next;
     });
 
-    for (const id of retryIds) {
-      const delayMs = randomRetryDelayMs();
-      window.setTimeout(() => {
-        const success = Math.random() >= 0.2;
-        setRows((prev) =>
-          prev.map((t) => {
-            if (t.id !== id || t.status !== TRANSACTION_STATUS.Retrying) {
-              return t;
-            }
-            return {
-              ...t,
-              status: success
-                ? TRANSACTION_STATUS.Success
-                : TRANSACTION_STATUS.Failed,
-            };
-          }),
-        );
-      }, delayMs);
-    }
+    void Promise.allSettled(
+      retryIds.map(async (id) => {
+        const { success } = await resolveMockRetryPayment(id);
+        setRows((prev) => applyRetryResult(prev, id, success));
+      }),
+    );
   }
 
   if (initialLoading) {

@@ -1,9 +1,6 @@
 import { MOCK_TRANSACTION_DTOS } from "@/lib/mock-transactions"
-import {
-  mapTransactionsListResponse,
-  type ApiResult,
-  type TransactionsListResponse,
-} from "@/types/api"
+import { mapTransactionsListResponse } from "@/lib/transaction-mappers"
+import type { ApiResult, TransactionsListResponse } from "@/types/api"
 import type { Transaction } from "@/types/transaction"
 
 const INITIAL_LOAD_DELAY_MS = 750
